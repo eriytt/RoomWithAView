@@ -34,5 +34,9 @@
 __pycache__
 node_modules
 frontend/dist
+frontend/build
 app/project/libs
+app/project/bin
+app/project/gen
+
 *.log
