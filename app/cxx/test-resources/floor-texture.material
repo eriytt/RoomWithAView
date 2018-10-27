@@ -1,0 +1,22 @@
+material testmaterial
+{
+    // first, preferred technique
+    technique
+    {
+        // first pass
+        pass
+        {
+            // Texture unit 0
+            texture_unit
+            {
+                texture parquet.jpg
+            }
+            vertex_program_ref vUnit
+            {
+            }
+            fragment_program_ref fTexture
+            {
+            }
+        }
+    }
+}

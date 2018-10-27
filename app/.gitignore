@@ -31,8 +31,5 @@
 *.out
 *.app
 
-__pycache__
-node_modules
-frontend/dist
-app/project/libs
-*.log
+# Emacs tmp files
+*~

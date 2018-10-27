@@ -1,0 +1,5 @@
+fragment_program fTexture glsl
+{
+    source fTexture.glsl
+    syntax glsl
+}

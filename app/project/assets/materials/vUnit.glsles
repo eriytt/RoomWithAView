@@ -1,0 +1,12 @@
+attribute vec4 vertex;
+attribute vec4 uv0;
+
+uniform mat4 uWorldViewProj;
+
+varying vec2 vTexcoord;
+
+void main()
+{
+   vTexcoord = uv0.st;
+   gl_Position = uWorldViewProj * vertex;
+}

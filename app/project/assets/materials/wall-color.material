@@ -1,0 +1,19 @@
+material wall-color
+{
+    // first, preferred technique
+    technique
+    {
+        // first pass
+        pass
+        {
+            vertex_program_ref vUnit
+            {
+                param_named_auto uWorldViewProj WORLDVIEWPROJ_MATRIX
+            }
+            fragment_program_ref fColor
+            {
+                param_named_auto pColor custom 1
+            }
+        }
+    }
+}

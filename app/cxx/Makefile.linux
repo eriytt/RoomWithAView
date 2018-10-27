@@ -1,0 +1,12 @@
+OBJECTS = main-linux.o testapp.o ogre-linux.o OgreMemoryArchive.o Downloader.o
+
+RAPIDJSON_CXXFLAGS = -I/home/tower/src/3rdparty/rapidjson/include
+
+CXXFLAGS = -g -Wall -std=c++14 -I/usr/include/OGRE -I/usr/include/OGRE/RenderSystems/GL $(RAPIDJSON_CXXFLAGS)
+LDFLAGS = -L/usr/lib/x86_64-linux-gnu -lOgreMain -lboost_system -lOIS
+
+RoomWithAView: $(OBJECTS)
+	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)
+
+clean:
+	rm -f $(OBJECTS) RoomWithAView

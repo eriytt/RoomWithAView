@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mesh>
+<submeshes>
+<submesh operationtype="triangle_list" use32bitindexes="False" usesharedvertices="False">
+<geometry vertexcount="6">
+<vertexbuffer colours_diffuse="False" normals="false" positions="true" texture_coords="0">
+<vertex>
+<position x="1" y="-1" z="1"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="1"/>
+</vertex>
+<vertex>
+<position x="1" y="1" z="1"/>
+</vertex>
+<vertex>
+<position x="-1" y="1" z="1"/>
+</vertex>
+<vertex>
+<position x="1" y="1" z="1"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="1"/>
+</vertex>
+</vertexbuffer>
+</geometry>
+<faces count="2">
+<face v1="0" v2="1" v3="2" />
+<face v1="3" v2="4" v3="5" />
+</faces>
+</submesh>
+<submesh operationtype="triangle_list" use32bitindexes="False" usesharedvertices="False">
+<geometry vertexcount="6">
+<vertexbuffer colours_diffuse="False" normals="false" positions="true" texture_coords="0">
+<vertex>
+<position x="-1" y="-1" z="-1"/>
+</vertex>
+<vertex>
+<position x="1" y="-1" z="-1"/>
+</vertex>
+<vertex>
+<position x="1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="-1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="-1"/>
+</vertex>
+</vertexbuffer>
+</geometry>
+<faces count="2">
+<face v1="0" v2="1" v3="2" />
+<face v1="3" v2="4" v3="5" />
+</faces>
+</submesh>
+<submesh operationtype="triangle_list" use32bitindexes="False" usesharedvertices="False">
+<geometry vertexcount="6">
+<vertexbuffer colours_diffuse="False" normals="false" positions="true" texture_coords="0">
+<vertex>
+<position x="1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="1" y="-1" z="-1"/>
+</vertex>
+<vertex>
+<position x="1" y="-1" z="1"/>
+</vertex>
+<vertex>
+<position x="1" y="1" z="1"/>
+</vertex>
+<vertex>
+<position x="1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="1" y="-1" z="1"/>
+</vertex>
+</vertexbuffer>
+</geometry>
+<faces count="2">
+<face v1="0" v2="1" v3="2" />
+<face v1="3" v2="4" v3="5" />
+</faces>
+</submesh>
+<submesh operationtype="triangle_list" use32bitindexes="False" usesharedvertices="False">
+<geometry vertexcount="6">
+<vertexbuffer colours_diffuse="False" normals="false" positions="true" texture_coords="0">
+<vertex>
+<position x="-1" y="-1" z="-1"/>
+</vertex>
+<vertex>
+<position x="-1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="1"/>
+</vertex>
+<vertex>
+<position x="-1" y="1" z="-1"/>
+</vertex>
+<vertex>
+<position x="-1" y="1" z="1"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="1"/>
+</vertex>
+</vertexbuffer>
+</geometry>
+<faces count="2">
+<face v1="0" v2="1" v3="2" />
+<face v1="3" v2="4" v3="5" />
+</faces>
+</submesh>
+<submesh operationtype="triangle_list" use32bitindexes="False" usesharedvertices="False">
+<geometry vertexcount="6">
+<vertexbuffer colours_diffuse="False" normals="false" positions="true" texture_coords="1">
+<vertex>
+<position x="1" y="-1" z="1"/>
+<texcoord u="1" v="1"/>
+</vertex>
+<vertex>
+<position x="1" y="-1" z="-1"/>
+<texcoord u="1" v="0"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="1"/>
+<texcoord u="0" v="1"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="1"/>
+<texcoord u="0" v="1"/>
+</vertex>
+<vertex>
+<position x="1" y="-1" z="-1"/>
+<texcoord u="1" v="0"/>
+</vertex>
+<vertex>
+<position x="-1" y="-1" z="-1"/>
+<texcoord u="0" v="0"/>
+</vertex>
+</vertexbuffer>
+</geometry>
+<faces count="2">
+<face v1="0" v2="1" v3="2" />
+<face v1="3" v2="4" v3="5" />
+</faces>
+</submesh>
+</submeshes>
+<submeshnames>
+<submeshname index="0" name="Wall1"/>
+<submeshname index="1" name="Wall2"/>
+<submeshname index="2" name="Wall3"/>
+<submeshname index="3" name="Wall4"/>
+<submeshname index="4" name="Floor"/>
+</submeshnames>
+</mesh>

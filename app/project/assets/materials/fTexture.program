@@ -1,0 +1,10 @@
+fragment_program fTexture glsles
+{
+    source fTexture.glsles
+    syntax glsles
+    default_params
+    {
+        param_named tex int 0
+    }
+
+}

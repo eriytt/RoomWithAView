@@ -1,0 +1,5 @@
+fragment_program fColor glsl
+{
+    source fColor.glsl
+    syntax glsl
+}
