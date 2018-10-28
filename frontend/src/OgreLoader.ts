@@ -185,7 +185,7 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
     //if <submeshname> exist
     const submeshNamesNode = XMLNode.getElementsByTagName("submeshnames")[0];
     if (submeshNamesNode) {
-      meshes = this.parseSubmeshnames(submeshNamesNode, meshes as THREE.Mesh[]);
+      meshes = this.parseSubmeshnames(submeshNamesNode, meshes);
     }
 
     //merging all geometry for this mesh
@@ -474,10 +474,9 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
   }
 
   private parseSubmeshname(XMLNode: Element, meshes: THREE.Mesh[]) {
-    const nameNode = XMLNode.getAttribute("name");
+    const name = XMLNode.getAttribute("name");
     const index = attrInt(XMLNode, "index");
-
-    meshes[index].name = name;
+    meshes[index].name = name || "";
 
     return meshes;
   }
