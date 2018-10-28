@@ -4,6 +4,7 @@ import { ThreeCanvasComponent } from "./ThreeCanvasComponent";
 import { ColorMenuComponent } from "./ColorMenu";
 //import { OgreMaxLoader } from "./OgreMaxLoader";
 import { OgreLoader } from "./OgreLoader";
+import { ApiClient } from "./api";
 
 export type MeshObject = {
   mesh: THREE.Mesh;
@@ -99,149 +100,59 @@ export class View {
   setupScene(cmp: ThreeCanvasComponent) {
     this.mycanvas = cmp;
 
-    // prettier-ignore
-    const wall1 = new Float32Array( [
-        1.0, -1.0,  1.0,
-        -1.0, -1.0,  1.0,
-        1.0,  1.0,  1.0,
-
-        -1.0,  1.0,  1.0,
-        1.0,  1.0,  1.0,
-        -1.0, -1.0,  1.0
-    ] );
-
-    const w1_geom = new THREE.BufferGeometry();
-    w1_geom.addAttribute("position", new THREE.BufferAttribute(wall1, 3));
-    const w1_mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const w1_mesh = new THREE.Mesh(w1_geom, w1_mat);
-    cmp.scene.add(w1_mesh);
-    this.state.objects.push({ mesh: w1_mesh, name: "Wall1" });
-
-    // prettier-ignore
-    const wall2 = new Float32Array([
-
-     -1.0, -1.0,  -1.0,
-      1.0, -1.0,  -1.0,
-      1.0,  1.0,  -1.0,
-
-      1.0,  1.0,  -1.0,
-     -1.0,  1.0,  -1.0,
-     -1.0, -1.0,  -1.0
-  ] );
-
-    const w2_geom = new THREE.BufferGeometry();
-    w2_geom.addAttribute("position", new THREE.BufferAttribute(wall2, 3));
-    const w2_mat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const w2_mesh = new THREE.Mesh(w2_geom, w2_mat);
-    cmp.scene.add(w2_mesh);
-    this.state.objects.push({ mesh: w2_mesh, name: "Wall2" });
-
-    // prettier-ignore
-    const wall3 = new Float32Array([
-        1.0,   1.0,  -1.0,
-        1.0,  -1.0,  -1.0,
-        1.0,  -1.0,   1.0,
-
-        1.0,  1.0,  1.0,
-        1.0,  1.0, -1.0,
-        1.0, -1.0,  1.0
-    ] );
-
-    const w3_geom = new THREE.BufferGeometry();
-    w3_geom.addAttribute("position", new THREE.BufferAttribute(wall3, 3));
-    const w3_mat = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const w3_mesh = new THREE.Mesh(w3_geom, w3_mat);
-    cmp.scene.add(w3_mesh);
-    this.state.objects.push({ mesh: w3_mesh, name: "Wall3" });
-    // prettier-ignore
-    const wall4 = new Float32Array([
-        -1.0,  -1.0,  -1.0,
-        -1.0,   1.0,  -1.0,
-        -1.0,  -1.0,   1.0,
-
-        -1.0,  1.0, -1.0,
-        -1.0,  1.0,  1.0,
-        -1.0, -1.0,  1.0
-    ] );
-
-    const w4_geom = new THREE.BufferGeometry();
-    w4_geom.addAttribute("position", new THREE.BufferAttribute(wall4, 3));
-    const w4_mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const w4_mesh = new THREE.Mesh(w4_geom, w4_mat);
-    cmp.scene.add(w4_mesh);
-    this.state.objects.push({ mesh: w4_mesh, name: "Wall4" });
-
-    // prettier-ignore
-    const floor = new Float32Array([
-         1.0, -1.0,  1.0,
-         1.0, -1.0, -1.0,
-        -1.0, -1.0,  1.0,
-
-        -1.0, -1.0,  1.0,
-         1.0, -1.0, -1.0,
-        -1.0, -1.0, -1.0,
-    ] );
-
-    const textureSize = 1.0;
-    // prettier-ignore
-    const floorUVs = new Float32Array([
-      textureSize, textureSize,
-      textureSize, 0.0,
-      0.0, textureSize,
-
-      0.0, textureSize,
-      textureSize, 0.0,
-      0.0, 0.0,
-    ]);
-
-    console.log("Loading texture...");
-    const texture = new THREE.TextureLoader().load(
-      "textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg",
-      () => {
-        console.log("Texture loaded");
-        this.mycanvas!.updateCanvas();
-      },
-      () => {
-        console.log("Texture load in progress");
-      },
-      err => {
-        console.error("Error loading texture:", err);
-      }
-    );
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    const repeat = 2;
-    texture.repeat.set(repeat, repeat);
-    const floor_geom = new THREE.BufferGeometry();
-    floor_geom.addAttribute("position", new THREE.BufferAttribute(floor, 3));
-    floor_geom.addAttribute("uv", new THREE.BufferAttribute(floorUVs, 2));
-    const floor_mat = new THREE.MeshBasicMaterial({
-      map: texture
-    });
-    const floor_mesh = new THREE.Mesh(floor_geom, floor_mat);
-    cmp.scene.add(floor_mesh);
-    this.state.objects.push({ mesh: floor_mesh, name: "Floor" });
+    const metaP = ApiClient.get("/model/meta")
+      .then(response => {
+        return response.json();
+      })
+      .catch(e => {
+        console.log(`There was a problem loading your model: ${e}`);
+      });
 
     const ogreloader = new OgreLoader();
+    ogreloader.load("modelxml").then(async meshes => {
+      console.log(`Model modelxml loaded: ${meshes.length} meshes`);
 
-    ogreloader.load(
-      "modelxml",
-      meshes => {
-        console.log(`Model modelxml loaded: ${meshes.length} meshes`);
-        meshes.forEach(m => {
-          console.log(m);
-          m.translateX(3.0);
-          this.state.objects.push({ mesh: m, name: m.name });
-          cmp.scene.add(m);
-        });
-      },
-      progressEvent => {
-        console.log("Progress loading model");
-      },
-      errorEvent => {
-        console.log("Error loading model");
-      }
-    );
+      const json = await metaP;
+
+      meshes.forEach(m => {
+        const meshMeta = json[m.name];
+        if (meshMeta) {
+          const materialType = meshMeta["type"];
+          if (materialType == "SolidColor") {
+            const material = new THREE.MeshBasicMaterial({
+              color: parseInt(meshMeta["color"], 16)
+            });
+            m.material = material;
+          } else if (materialType == "Texture") {
+            const texture = new THREE.TextureLoader().load(
+              meshMeta["uri"],
+              () => {
+                console.log("Texture loaded");
+                this.mycanvas!.updateCanvas();
+              },
+              () => {
+                console.log("Texture load in progress");
+              },
+              err => {
+                console.error("Error loading texture:", err);
+              }
+            );
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            const repeat = 2;
+            texture.repeat.set(repeat, repeat);
+
+            const material = new THREE.MeshBasicMaterial({
+              map: texture
+            });
+            m.material = material;
+          }
+        }
+
+        this.state.objects.push({ mesh: m, name: m.name });
+        cmp.scene.add(m);
+      });
+    });
 
     cmp.picker = (cmp, hits) => {
       this.pickObject(cmp, hits);

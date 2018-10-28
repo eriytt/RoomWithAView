@@ -77,59 +77,40 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
     this.internalManager = new THREE.LoadingManager();
   }
 
-  load(
-    url: string,
-    onLoad?: (result: THREE.Mesh[]) => void,
-    onProgress?: (event: ProgressEvent) => void,
-    onError?: (event: ErrorEvent) => void
-  ): any {
-    onLoad = onLoad || function() {};
-    onProgress = onProgress || function() {};
-    onError = onError || function() {};
+  load(url: string): Promise<THREE.Mesh[]> {
+    return new Promise((resolve, reject) => {
+      const loader = new THREE.FileLoader(this.manager);
+      loader.load(
+        url,
+        (response: string) => {
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(response, "text/xml");
 
-    // this.internalManager.onStart = (
-    //   url: string,
-    //   itemsLoaded: number,
-    //   itemsTotal: number
-    // ) => {
-    //   console.groupCollapsed("[OgreLoader]");
-    //   console.log("[OgreLoader] Started loading " + url);
-    //   console.log("\t\tLoaded: " + itemsLoaded + "/" + itemsTotal);
-    // };
+          const data = this.parseOgreXml(xml);
 
-    const onFileLoaded = (response: string) => {
-      //console.log("Got response:", response);
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(response, "text/xml");
+          // if (data.scene) {
+          //   scope.objectRoot.scene = data.scene;
+          // }
 
-      const data = this.parseOgreXml(xml);
+          // if (data.meshes) {
+          //   scope.objectRoot.meshes = data.meshes;
+          // }
 
-      // if (data.scene) {
-      //   scope.objectRoot.scene = data.scene;
-      // }
+          // if (data.skeleton) {
+          //   scope.objectRoot.skeleton = data.skeleton;
+          // }
 
-      // if (data.meshes) {
-      //   scope.objectRoot.meshes = data.meshes;
-      // }
-
-      // if (data.skeleton) {
-      //   scope.objectRoot.skeleton = data.skeleton;
-      // }
-
-      // scope.internalManager.itemEnd(url);
-      if (onLoad != undefined) onLoad(data.meshes);
-    };
-
-    //TODO
-    const onFileProgress = (event: ProgressEvent) => {};
-
-    //TODO
-    const onFileError = (event: ErrorEvent) => {
-      //scope.internalManager.itemError(url);
-    };
-
-    const loader = new THREE.FileLoader(this.manager);
-    loader.load(url, onFileLoaded, onFileProgress, onFileError);
+          // scope.internalManager.itemEnd(url);
+          resolve(data.meshes);
+        },
+        (event: ProgressEvent) => {
+          console.log("File loading progress:", event);
+        },
+        (event: ErrorEvent) => {
+          reject(event);
+        }
+      );
+    });
   }
 
   private parseOgreXml(xml: Document): OgreData {
