@@ -1,1 +1,26 @@
-{"Wall1":{"type":"SolidColor","color":"ff0000"},"Wall2":{"type":"SolidColor","color":"00ff00"},"Wall3":{"type":"SolidColor","color":"0000ff"},"Wall4":{"type":"SolidColor","color":"ffff00"},"Floor":{"type":"Texture","uri":"/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"}}
+{
+  "LivingRoom_Wall0": {
+    "type": "SolidColor",
+    "color": "ff0000"
+  },
+  "LivingRoom_Wall1": {
+    "type": "SolidColor",
+    "color": "00ff00"
+  },
+  "LivingRoom_Wall2": {
+    "type": "SolidColor",
+    "color": "0000ff"
+  },
+  "LivingRoom_Wall3": {
+    "type": "SolidColor",
+    "color": "ffff00"
+  },
+  "LivingRoom_Ceiling": {
+    "type": "SolidColor",
+    "color": "ffffff"
+  },
+  "LivingRoom_Floor": {
+    "type": "Texture",
+    "uri": "/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"
+  }
+}

@@ -60,9 +60,10 @@ export class ThreeCanvasComponent extends React.Component<
 
   setCamera() {
     const x = this.r * Math.sin(this.theta) * Math.cos(this.phi);
-    const z = this.r * Math.sin(this.theta) * Math.sin(this.phi);
-    const y = this.r * Math.cos(this.theta);
+    const y = this.r * Math.sin(this.theta) * Math.sin(this.phi);
+    const z = this.r * Math.cos(this.theta);
     //const y = 6;
+    this.camera!.up = new THREE.Vector3(0, 0, 1);
     this.camera!.position.set(x, y, z);
     this.camera!.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
   }
@@ -99,7 +100,7 @@ export class ThreeCanvasComponent extends React.Component<
       if (event.buttons & 1) {
         const dx = event.clientX - this.mouseX;
         const dy = event.clientY - this.mouseY;
-        this.phi += dx / (360 * 2 * Math.PI) * 10;
+        this.phi -= dx / (360 * 2 * Math.PI) * 10;
         this.theta -= dy / (360 * 2 * Math.PI) * 10;
         this.setCamera();
         this.updateCanvas();
