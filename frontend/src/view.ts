@@ -42,17 +42,21 @@ export class View {
       console.log("Object changed");
       if (this.state.shadeObject) cmp.scene.remove(this.state.shadeObject.mesh);
       if (this.state.currentObject) {
+        const g = this.state.currentObject.mesh
+          .geometry as THREE.BufferGeometry;
         const c_geom = new THREE.BufferGeometry();
-        c_geom.addAttribute(
-          "position",
-          (this.state.currentObject.mesh
-            .geometry as THREE.BufferGeometry).getAttribute("position")
-        );
+
+        c_geom.addAttribute("position", g.getAttribute("position"));
+
+        const index = g.index;
+        if (index != null) c_geom.setIndex(index);
+
         const c_mat = new THREE.MeshBasicMaterial({
           color: 0x0000ff,
           opacity: 0.3,
           transparent: true
         });
+
         const c_mesh = new THREE.Mesh(c_geom, c_mat);
         cmp.scene.add(c_mesh);
         this.state.shadeObject = { mesh: c_mesh, name: "Shade" };
