@@ -22,5 +22,81 @@
   "LivingRoom_Floor": {
     "type": "Texture",
     "uri": "/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"
+  },
+
+  "Kitchen_Wall0": {
+    "type": "SolidColor",
+    "color": "ff0000"
+  },
+  "Kitchen_Wall1": {
+    "type": "SolidColor",
+    "color": "00ff00"
+  },
+  "Kitchen_Wall2": {
+    "type": "SolidColor",
+    "color": "0000ff"
+  },
+  "Kitchen_Wall3": {
+    "type": "SolidColor",
+    "color": "ffff00"
+  },
+  "Kitchen_Ceiling": {
+    "type": "SolidColor",
+    "color": "ffffff"
+  },
+  "Kitchen_Floor": {
+    "type": "Texture",
+    "uri": "/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"
+  },
+
+  "BathRoom_Wall0": {
+    "type": "SolidColor",
+    "color": "ff0000"
+  },
+  "BathRoom_Wall1": {
+    "type": "SolidColor",
+    "color": "00ff00"
+  },
+  "BathRoom_Wall2": {
+    "type": "SolidColor",
+    "color": "0000ff"
+  },
+  "BathRoom_Wall3": {
+    "type": "SolidColor",
+    "color": "ffff00"
+  },
+  "BathRoom_Ceiling": {
+    "type": "SolidColor",
+    "color": "ffffff"
+  },
+  "BathRoom_Floor": {
+    "type": "Texture",
+    "uri": "/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"
+  },
+
+  "BedRoom_Wall0": {
+    "type": "SolidColor",
+    "color": "ff0000"
+  },
+  "BedRoom_Wall1": {
+    "type": "SolidColor",
+    "color": "00ff00"
+  },
+  "BedRoom_Wall2": {
+    "type": "SolidColor",
+    "color": "0000ff"
+  },
+  "BedRoom_Wall3": {
+    "type": "SolidColor",
+    "color": "ffff00"
+  },
+  "BedRoom_Ceiling": {
+    "type": "SolidColor",
+    "color": "ffffff"
+  },
+  "BedRoom_Floor": {
+    "type": "Texture",
+    "uri": "/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"
   }
+
 }
