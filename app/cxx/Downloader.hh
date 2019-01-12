@@ -9,13 +9,14 @@ class Downloader
 {
 public:
   typedef std::function<void(const std::string &, char *data, size_t len)> Callback;
+
 private:
   struct QueueItem
   {
     std::string uri;
     Callback f;
 
-    QueueItem(const std::string &uri, Callback f) : uri(uri), f(f) {}
+    QueueItem(const std::string &uri, Callback f): uri(uri), f(f) {}
   };
 
   std::vector<QueueItem> queue;

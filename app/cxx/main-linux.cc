@@ -43,6 +43,18 @@ public:
 
 int main(int argc, char *argv[])
 {
+
+  std::map<std::string, std::string> urlToFile = {
+    {"/model", "../../backend/db/complex.mesh"},
+    {"/model/meta", "../../backend/db/meta-complex.json"},
+    {"/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg",
+     "../../backend/static/textures/parquet-dark-golden-oak-hardwood-floor-pine-tree-colorful-seamless-texture-256x256.jpg"},
+    {"/textures/DV_157x152_8352574_01_4c_SE_20170802162619.jpg",
+     "../../backend/static/textures/DV_157x152_8352574_01_4c_SE_20170802162619.jpg"},
+    {"/model/furniture", "../../backend/db/furniture.json"},
+    {"/model/sofa_seat.000.mesh.mesh", "../../backend/db/sofa_seat.000.mesh.mesh"}
+  };
+
   OgreCardboardTestApp *app = new OgreCardboardTestApp();
   app->initialize();
 
@@ -70,9 +82,12 @@ int main(int argc, char *argv[])
     Downloader &dl = app->getDownloader();
     while (dl.hasQueuedDownloads())
       {
+        LOGI("Serving fake download");
         auto uri = dl.dequeueDownload();
         LOGI("Downloading (fake) %s", uri.c_str());
-        std::ifstream input(std::string("../../backend/static") + uri, std::ios::binary);
+        std::ifstream input(std::string(urlToFile[uri]), std::ios::binary);
+        if (input.fail())
+          throw std::runtime_error("File does not exist");
         std::vector<char> buffer((std::istreambuf_iterator<char>(input)),
                                  (std::istreambuf_iterator<char>()));
         dl.downloadFinished(uri, buffer.data(), buffer.size());

@@ -36,38 +36,11 @@ JNI_METHOD(void, Render)(JNIEnv *env, jclass clazz)
 JNI_METHOD(void, UpdateModel)(JNIEnv *env, jclass clazz, jbyteArray array)
 {
   LOGI("UpdateModel");
-  jbyte* bufferPtr = env->GetByteArrayElements(array, NULL);
-  jsize lengthOfArray = env->GetArrayLength(array);
-
-  char *buf = new char[lengthOfArray];
-  memcpy(buf, bufferPtr, lengthOfArray);
-  //std::array<char*> buf;
-  //std::copy_n(bufferPtr, lengthOfArray, std::back_inserter(buf));
-  app->runOnApplicationThread([=](){
-      auto archive = app->getModelsResourceArchive();
-      LOGI("Setting resource");
-      archive->setResource("/models/model.mesh", buf, lengthOfArray);
-      LOGI("Reloading model");
-      app->reload();
-      delete[] buf;
-    });
-
-  env->ReleaseByteArrayElements(array, bufferPtr, JNI_ABORT);
+  app->reload();
 }
 
 JNI_METHOD(void, UpdateMeta)(JNIEnv *env, jclass clazz, jbyteArray array)
 {
-  jbyte* bufferPtr = env->GetByteArrayElements(array, NULL);
-  jsize lengthOfArray = env->GetArrayLength(array);
-
-  char *buf = new char[lengthOfArray];
-  memcpy(buf, bufferPtr, lengthOfArray);
-  app->runOnApplicationThread([=](){
-      app->reloadMeta(buf, lengthOfArray);
-      delete[] buf;
-    });
-
-  env->ReleaseByteArrayElements(array, bufferPtr, JNI_ABORT);
 }
 
 JNI_METHOD(jboolean, HasQueuedDownloads)(JNIEnv *env, jclass clazz)
@@ -98,6 +71,16 @@ JNI_METHOD(void, DownloadFinished)(JNIEnv *env, jclass clazz, jstring uri, jbyte
   downloader.downloadFinished(std::string(uriStr), buf, lengthOfArray);
 
   env->ReleaseStringUTFChars(uri, uriStr);
+}
+
+JNI_METHOD(void, HandleKeyDown)(JNIEnv *env, jclass clazz, jint key)
+{
+  app->handleKeyDown(static_cast<int>(key));
+}
+
+JNI_METHOD(void, HandleKeyUp)(JNIEnv *env, jclass clazz, jint key)
+{
+  app->handleKeyUp(static_cast<int>(key));
 }
 
 } // extern "C"

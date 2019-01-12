@@ -20,8 +20,8 @@ OgreCardboardTestApp::OgreCardboardTestApp() : OgreCardboardApp()
 void OgreCardboardTestApp::setupCamera()
 {
   forBothCameras([](Ogre::Camera *cam){
-      cam->setNearClipDistance(1.0f);
-      cam->setFarClipDistance(100.0f);
+      cam->setNearClipDistance(0.2f);
+      cam->setFarClipDistance(50.0f);
     });
 }
 
@@ -35,11 +35,11 @@ void OgreCardboardTestApp::setupResources(Ogre::ResourceGroupManager &rgm)
 
   rgm.addResourceLocation("/materials", "APKFileSystem", "StaticMaterials");
   rgm.addResourceLocation("/dynmaterials", "Memory", "DynamicMaterials");
-  rgm.addResourceLocation("/models",    "Memory", "Models");
+  rgm.addResourceLocation("/model",    "Memory", "Models");
 
   for (auto i : Ogre::ArchiveManager::getSingleton().getArchiveIterator())
     {
-      if (i.second->getName() == "/models")
+      if (i.second->getName() == "/model")
         modelsArchive = static_cast<Ogre::MemoryArchive*>(i.second);
       else if (i.second->getName() == "/dynmaterials")
         dynmaterialsArchive = static_cast<Ogre::MemoryArchive*>(i.second);
@@ -55,12 +55,12 @@ void OgreCardboardTestApp::setupResources(Ogre::ResourceGroupManager &rgm)
   rgm.createResourceGroup("Models", false);
 
   rgm.addResourceLocation("/dynmaterials", "Memory", "DynamicMaterials");
-  rgm.addResourceLocation("/models",    "Memory", "Models");
+  rgm.addResourceLocation("/model", "Memory", "Models");
   rgm.addResourceLocation("test-resources", "FileSystem");
 
   for (auto i : Ogre::ArchiveManager::getSingleton().getArchiveIterator())
     {
-      if (i.second->getName() == "/models")
+      if (i.second->getName() == "/model")
         modelsArchive = static_cast<Ogre::MemoryArchive*>(i.second);
       else if (i.second->getName() == "/dynmaterials")
         dynmaterialsArchive = static_cast<Ogre::MemoryArchive*>(i.second);
@@ -74,8 +74,8 @@ void OgreCardboardTestApp::initialize()
   OgreCardboardApp::initialize();
 
   forBothCamerasAndViewports([](Ogre::Camera *c, Ogre::Viewport *vp){
-    c->setPosition(Ogre::Vector3(3.0f, 3.0f, 3.0f));
-    c->lookAt(Ogre::Vector3(0.0f, 0.0f, 0.0f));
+    c->setPosition(Ogre::Vector3(6.0f, 1.87f, 6.0f));
+    c->lookAt(Ogre::Vector3(0.0f, 1.87f, 0.0f));
     vp->setBackgroundColour(Ogre::ColourValue::Black);
     });
 
@@ -162,15 +162,22 @@ static void MakeTextureMaterial(const std::string &materialName,
 }
 
 #include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 void OgreCardboardTestApp::reloadMeta(char *json, size_t length)
 {
   LOGI(__PRETTY_FUNCTION__);
+  LOGD("json:\n%s", json);
   rapidjson::Document doc;
-
+  json[length] = 0;
   doc.ParseInsitu(json);
-
-  // TODO: Error checking
+  if (doc.HasParseError())
+    {
+      LOGD("Parsing has error");
+      LOGE("Parsing JSON meta failed at offset %d: %s",
+           doc.GetErrorOffset(), GetParseError_En(doc.GetParseError()));
+      return;
+    }
 
   for (auto itr = doc.MemberBegin(); itr != doc.MemberEnd(); ++itr)
     {
@@ -221,20 +228,19 @@ void OgreCardboardTestApp::reloadMeta(char *json, size_t length)
               LOGI("GETing texture %s", textureURI.c_str());
               Ogre::MemoryArchive *arch = dynmaterialsArchive;
               // TODO: check if it's pending already (or just queue the callback)
-              downloader->download(textureURI,
-                                   [textureURI, subEnt, arch](const std::string &uri, char *data, size_t len)
-                                  {
-                                    const std::string matName("floortexture");
-                                    const std::string textureName(textureURI.substr(textureURI.rfind('/') + 1, std::string::npos));
-                                    LOGI("Updating resource %s", textureName.c_str());
-                                    arch->setResource(std::string("/dynmaterials/") + textureName, data, len);
-                                    LOGI("Creating material %s", matName.c_str());
-                                    MakeTextureMaterial(matName, textureName);
-                                    LOGI("Setting material name %s for subentity", matName.c_str());
-                                    // TODO: Dangerous, how do we now the subentity is still alive,
-                                    //       should probably look it up again...
-                                    subEnt->setMaterialName(matName);
-                                  });
+              downloader->download(textureURI, [textureURI, subEnt, arch](const std::string &uri, char *data, size_t len) {
+                  const std::string textureName(textureURI.substr(textureURI.rfind('/') + 1, std::string::npos));
+                  const std::string matName(textureName);
+                  LOGI("Updating resource %s", textureName.c_str());
+                  arch->setResource(std::string("/dynmaterials/") + textureName, data, len);
+                  LOGI("Creating material %s", matName.c_str());
+                  MakeTextureMaterial(matName, textureName);
+                  LOGI("Setting material name %s for subentity", matName.c_str());
+                  // TODO: Dangerous, how do we now the subentity is still alive,
+                  //       should probably look it up again...
+                  subEnt->setMaterialName(matName);
+                  return 0;
+                });
             }
           else
             subEnt->setMaterialName(textureURI);
@@ -247,56 +253,121 @@ void OgreCardboardTestApp::reloadMeta(char *json, size_t length)
     }
 }
 
-void OgreCardboardTestApp::reload()
-{
-  LOGI("Reloading");
+void OgreCardboardTestApp::reloadFurniture() {
+  downloader->download("/model/furniture", [this](const std::string &uri, char *data, size_t len) {
+      rapidjson::Document doc;
 
+      data[len] = 0;
+
+      doc.ParseInsitu(data);
+
+      if (doc.HasParseError())
+        {
+          LOGD("Parsing has error");
+          LOGE("Parsing JSON meta failed at offset %d: %s",
+               doc.GetErrorOffset(), GetParseError_En(doc.GetParseError()));
+          return;
+        }
+
+
+      for (auto itr = doc.MemberBegin(); itr != doc.MemberEnd(); ++itr)
+        {
+
+          std::string name(itr->name.GetString());
+          const rapidjson::Value &v = doc[itr->name.GetString()];
+
+          std::string mesh(v["mesh"].GetString());
+          std::string meshUri = std::string("/model/") + mesh + ".mesh";
+
+          Ogre::Vector3 position(v["position"]["x"].GetDouble(),
+                                 v["position"]["y"].GetDouble(),
+                                 v["position"]["z"].GetDouble());
+          Ogre::Vector3 rotation(v["rotation"]["x"].GetDouble(),
+                                 v["rotation"]["y"].GetDouble(),
+                                 v["rotation"]["z"].GetDouble());
+
+          downloader->download(meshUri, [&, this, mesh, position, rotation](const std::string &uri, char *data, size_t len) {
+              char *buf = new char[len];
+              memcpy(buf, data, len);
+              auto archive = this->getModelsResourceArchive();
+              archive->setResource(uri, buf, len);
+
+              LOGD("Creating entity for %s", mesh.c_str());
+              Ogre::Entity *e = this->sceneManager->createEntity(mesh, mesh + ".mesh", "Models");
+              Ogre::SceneNode *n = sceneManager->getRootSceneNode()->createChildSceneNode();
+              n->attachObject(e);
+              n->translate(position);
+              Ogre::Matrix3 r;
+              r.FromEulerAnglesXYZ(Ogre::Radian(rotation.x),
+                                   Ogre::Radian(rotation.y),
+                                   Ogre::Radian(rotation.z));
+              n->setOrientation(Ogre::Quaternion(r));
+            });
+        }
+    });
+}
+
+void OgreCardboardTestApp::reloadModel(char *modelData, size_t len)
+{
+  auto archive = getModelsResourceArchive();
+  LOGI("Setting resource");
+  archive->setResource("/model/model.mesh", modelData, len);
   if (mEnt != nullptr)
     {
       Ogre::SceneNode *parent = mEnt->getParentSceneNode();
       parent->detachObject(mEnt);
       sceneManager->destroyEntity(mEnt);
       sceneManager->destroySceneNode(mNode);
-
       Ogre::ResourceGroupManager &rgm = Ogre::ResourceGroupManager::getSingleton();
       rgm.destroyResourceGroup("Models");
       rgm.createResourceGroup("Models", false);
-      rgm.addResourceLocation("/models", "Memory", "Models");
+      rgm.addResourceLocation("/model", "Memory", "Models");
     }
+  mEnt = sceneManager->createEntity("model", "model.mesh", "Models");
 
-  try {
-    mEnt = sceneManager->createEntity("model", "model.mesh", "Models");
-  } catch (Ogre::Exception &e) {
-    LOGE("Exception when creating new entity: %s", e.getFullDescription().c_str());
-    return;
-  }
-   bool hasUV = false;
-   for (unsigned i = 0; i < mEnt->getNumSubEntities(); ++i)
-     {
-       std::cout << "SubEntity: " << i << std::endl;
-       auto decl = mEnt->getSubEntity(i)->getSubMesh()->vertexData->vertexDeclaration;
-       for (unsigned e = 0; e < decl->getElementCount(); ++e)
-         {
-           auto element = decl->getElement(e);
-           auto semantic = element->getSemantic();
-           std::cout << "  Element has semantic: " << semantic << std::endl;
-           if (semantic == Ogre::VES_TEXTURE_COORDINATES)
-             hasUV = true;
-         }
-       if (hasUV)
-         std::cout << "It has texture coordinates: " << std::endl;
-     }
-   std::cout << "Checking for uvs done" << std::endl;
-   //mEnt->setMaterialName("floor-texture");
-   //Ogre::SubEntity *subEnt = mEnt->getSubEntity(0);
-   //subEnt->setCustomParameter(1, Ogre::Vector4(1.0, 0.0, 0.0, 1.0));
-     //Ogre::MaterialPtr m = subEnt->getMaterial();
-   //m->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("pColor", Ogre::Vector4(1.0, 0.0, 0.0, 1.0));
-   //subEnt = mEnt->getSubEntity(1);
-   //subEnt->setCustomParameter(1, Ogre::Vector4(0.0, 0.0, 1.0, 1.0));
+  bool hasUV = false;
+  for (unsigned i = 0; i < mEnt->getNumSubEntities(); ++i)
+    {
+      std::cout << "SubEntity: " << i << std::endl;
+      auto decl = mEnt->getSubEntity(i)->getSubMesh()->vertexData->vertexDeclaration;
+      for (unsigned e = 0; e < decl->getElementCount(); ++e)
+        {
+          auto element = decl->getElement(e);
+          auto semantic = element->getSemantic();
+          std::cout << "  Element has semantic: " << semantic << std::endl;
+          if (semantic == Ogre::VES_TEXTURE_COORDINATES)
+            hasUV = true;
+        }
+      if (hasUV)
+        std::cout << "It has texture coordinates: " << std::endl;
+    }
+  std::cout << "Checking for uvs done" << std::endl;
+  //mEnt->setMaterialName("floor-texture");
+  //Ogre::SubEntity *subEnt = mEnt->getSubEntity(0);
+  //subEnt->setCustomParameter(1, Ogre::Vector4(1.0, 0.0, 0.0, 1.0));
+  //Ogre::MaterialPtr m = subEnt->getMaterial();
+  //m->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("pColor", Ogre::Vector4(1.0, 0.0, 0.0, 1.0));
+  //subEnt = mEnt->getSubEntity(1);
+  //subEnt->setCustomParameter(1, Ogre::Vector4(0.0, 0.0, 1.0, 1.0));
+  mNode = sceneManager->getRootSceneNode()->createChildSceneNode();
+  mNode->attachObject(mEnt);
+  //return mNode;
+  //mNode->pitch(Ogre::Radian(-1.57 - (1.57 / 2.0)));
 
-   mNode = sceneManager->getRootSceneNode()->createChildSceneNode();
-   mNode->attachObject(mEnt);
+}
+
+void OgreCardboardTestApp::reload()
+{
+  LOGI("Reloading");
+
+  downloader->download("/model", [&](const std::string &uri, char *data, size_t len){
+      reloadModel(data, len);
+      downloader->download("/model/meta", [&](const std::string &uri, char *data, size_t len){
+          reloadMeta(data, len);
+        });
+      reloadFurniture();
+    });
+  LOGD("reload exit");
 }
 
 void OgreCardboardTestApp::mainLoop()
@@ -325,9 +396,11 @@ void OgreCardboardTestApp::mainLoop()
 
   // Run main thread events
   callbackMutex.lock();
-  for (auto f : callbacks)
-    f();
-  callbacks.clear();
+  while(not callbacks.empty() and callbacks.front().ready())
+    {
+      callbacks.front().function();
+      callbacks.pop_front();
+    }
   callbackMutex.unlock();
 
   renderFrame();
@@ -357,10 +430,6 @@ void OgreCardboardTestApp::handleKeyDown(int key)
       break;
     case 5:
       {
-        std::ifstream input("model.mesh", std::ios::binary);
-        std::vector<char> buffer((std::istreambuf_iterator<char>(input)),
-                                 (std::istreambuf_iterator<char>()));
-        modelsArchive->setResource("/models/model.mesh", buffer.data(), buffer.size());
         reload();
       }
       break;
@@ -393,5 +462,5 @@ void OgreCardboardTestApp::handleKeyUp(int key)
 void OgreCardboardTestApp::runOnApplicationThread(Callback f)
 {
   std::lock_guard<std::mutex> lock(callbackMutex);
-  callbacks.push_back(f);
+  callbacks.push_back(Promise(f, [](){return true;}));
 }

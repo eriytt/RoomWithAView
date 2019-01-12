@@ -223,9 +223,22 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
   // TODO: Support multiple vertexbuffers somehow
   private parseGeometry(XMLNode: Element): Geometry {
     //const count = attrInt(XMLNode, "vertexcount");
+
     const node = XMLNode.getElementsByTagName("vertexbuffer");
 
-    return this.parseVertexbuffer(node[0]);
+    const geometry = this.parseVertexbuffer(node[0]);
+
+    if (geometry.vertices.length !== attrInt(XMLNode, "vertexcount")) {
+      throw new Error(
+        "vertices(" +
+          geometry.vertices.length +
+          ") and vertexcount(" +
+          attrInt(XMLNode, "vertexcount") +
+          ") should match"
+      );
+    }
+
+    return geometry;
   }
 
   private parseVertexbuffer(XMLNode: Element): Geometry {
@@ -342,25 +355,16 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
 
     const usesharedvertices = attrBool(XMLNode, "usesharedvertices");
 
-    if (usesharedvertices && !sharedGeometry)
-      throw new Error(
-        "Mesh uses shared geometry, but no shared geometry loaded"
-      );
-    else if (!node) throw new Error("Mesh has no geometry");
+    if (usesharedvertices) {
+      if (sharedGeometry == undefined)
+        throw new Error(
+          "Mesh uses shared geometry, but no shared geometry loaded"
+        );
+    } else if (!node) throw new Error("Mesh has no geometry");
 
     const geometry = usesharedvertices
       ? sharedGeometry!
       : this.parseGeometry(node);
-
-    if (geometry.vertices.length !== attrInt(node, "vertexcount")) {
-      throw new Error(
-        "vertices(" +
-          geometry.vertices.length +
-          ") and vertexcount(" +
-          attrInt(node, "vertexcount") +
-          ") should match"
-      );
-    }
 
     const geom = new THREE.BufferGeometry();
     geom.addAttribute(
@@ -447,6 +451,7 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
   private parseSubmeshnames(XMLNode: Element, meshes: THREE.Mesh[]) {
     const submeshNameNodes = XMLNode.getElementsByTagName("submeshname");
 
+    console.log("Found submeshname:", submeshNameNodes);
     for (var i = 0, il = submeshNameNodes.length; i < il; i++) {
       meshes = this.parseSubmeshname(submeshNameNodes[i], meshes);
     }

@@ -13,6 +13,9 @@
 
 #else
 
+#include <iostream>
+#include <stdarg.h>
+
 inline void NATIVE_LOG(std::ostream &stream, const std::string &level, const char *format, ...)
 {
   char *s;

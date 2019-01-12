@@ -31,6 +31,8 @@ void OgreCardboardApp::initialize()
   lviewport = renderWindow->addViewport(lcam, 0, 0.0f, 0.0f, 0.5f, 1.0f);
   rviewport = renderWindow->addViewport(rcam, 1, 0.5f, 0.0f, 0.5f, 1.0f);
 
+  sceneManager->getRootSceneNode()->pitch(Ogre::Radian(-Ogre::Math::HALF_PI));
+
   initialized = true;
 }
 

@@ -158,6 +158,8 @@ void OgreCardboardApp::initialize()
                                           vpUV.right - vpUV.left,
                                           vpUV.top - vpUV.bottom);
 
+    sceneManager->getRootSceneNode()->pitch(Ogre::Radian(-Ogre::Math::HALF_PI));
+
     initialized = true;
 }
 

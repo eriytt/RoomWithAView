@@ -101,6 +101,39 @@ export class View {
     this.mycanvas!.updateCanvas();
   }
 
+  setMaterialForMesh(mesh: THREE.Mesh, material: any) {
+    const materialType = material["type"];
+    if (materialType == "SolidColor") {
+      const mat = new THREE.MeshBasicMaterial({
+        color: parseInt(material["color"], 16)
+      });
+      mesh.material = mat;
+    } else if (materialType == "Texture") {
+      const texture = new THREE.TextureLoader().load(
+        material["uri"],
+        () => {
+          console.log("Texture loaded");
+          this.mycanvas!.updateCanvas();
+        },
+        () => {
+          console.log("Texture load in progress");
+        },
+        err => {
+          console.error("Error loading texture:", err);
+        }
+      );
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      const repeat = 0.8;
+      texture.repeat.set(repeat, repeat);
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: texture
+      });
+      mesh.material = mat;
+    }
+  }
+
   setupScene(cmp: ThreeCanvasComponent) {
     this.mycanvas = cmp;
 
@@ -121,42 +154,42 @@ export class View {
       meshes.forEach(m => {
         const meshMeta = json[m.name];
         if (meshMeta) {
-          const materialType = meshMeta["type"];
-          if (materialType == "SolidColor") {
-            const material = new THREE.MeshBasicMaterial({
-              color: parseInt(meshMeta["color"], 16)
-            });
-            m.material = material;
-          } else if (materialType == "Texture") {
-            const texture = new THREE.TextureLoader().load(
-              meshMeta["uri"],
-              () => {
-                console.log("Texture loaded");
-                this.mycanvas!.updateCanvas();
-              },
-              () => {
-                console.log("Texture load in progress");
-              },
-              err => {
-                console.error("Error loading texture:", err);
-              }
-            );
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            const repeat = 2;
-            texture.repeat.set(repeat, repeat);
-
-            const material = new THREE.MeshBasicMaterial({
-              map: texture
-            });
-            m.material = material;
-          }
+          this.setMaterialForMesh(m, meshMeta);
         }
 
         this.state.objects.push({ mesh: m, name: m.name });
         cmp.scene.add(m);
       });
     });
+
+    ApiClient.get("/model/furniture")
+      .then(response => {
+        console.log("Downloaded furniture");
+        return response.json();
+      })
+      .then(json => {
+        console.log("Got json:", json);
+        for (let name in json) {
+          const spec = json[name];
+          console.log(`Loading furiniture ${name}:`, spec);
+
+          ogreloader.load(`/model/${spec["mesh"]}`).then(meshes => {
+            meshes.forEach(m => {
+              console.log("Mesh loaded:", m);
+              this.setMaterialForMesh(m, spec["materials"][m.name]);
+              this.state.objects.push({ mesh: m, name: m.name });
+              const p = spec["position"];
+              const r = spec["rotation"];
+              m.position.set(p["x"], p["y"], p["z"]);
+              m.rotation.set(r["x"], r["y"], r["z"]);
+              cmp.scene.add(m);
+            });
+          });
+        }
+      })
+      .catch(e => {
+        console.log(`There was a problem loading your model: ${e}`);
+      });
 
     cmp.picker = (cmp, hits) => {
       this.pickObject(cmp, hits);

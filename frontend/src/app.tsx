@@ -47,5 +47,5 @@ const Router = () => {
     </BrowserRouter>
   );
 };
-console.log("Hello, main here!!!");
+
 render(<Router />, document.getElementById("root"));

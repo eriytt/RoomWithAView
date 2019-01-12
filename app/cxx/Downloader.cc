@@ -1,5 +1,6 @@
 #include "Downloader.hh"
 #include "testapp.hh"
+#include "Logging.hh"
 
 void Downloader::download(const std::string &uri, Callback f)
 {
@@ -19,18 +20,20 @@ std::string Downloader::dequeueDownload()
   if (queue.empty())
     throw std::runtime_error("Download queue empty");
 
-  QueueItem item = queue[0];
+  QueueItem item = std::move(queue[0]);
   queue.erase(queue.begin());
+  LOGD("Download of %s pending", item.uri.c_str());
+  std::string uri(item.uri);
+  pending.insert(std::make_pair(item.uri, std::move(item)));
 
-  pending.insert(std::make_pair(item.uri, item));
-
-  return item.uri;
+  return uri;
 }
 
 void Downloader::downloadFinished(const std::string &uri, char *data, size_t len)
 {
   // TODO: thread safety
 
+  LOGD("Download of %s finished", uri.c_str());
   auto itemIter = pending.find(uri);
   if (itemIter == pending.end())
     return;

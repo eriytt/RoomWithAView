@@ -18,7 +18,12 @@ socket = None
 
 @application.route("/modelxml", methods=['GET'])
 def get_model_mesh_xml():
-    return flask.send_from_directory('db', 'model.xml')
+    return flask.send_from_directory('db', 'complex.xml')
+
+
+@application.route("/model/sofa_seat.000.mesh.xml", methods=['GET'])
+def get_model_sofa_mesh_xml():
+    return flask.send_from_directory('db', 'sofa_seat.000.mesh.xml')
 
 
 @application.route("/model", methods=['GET', 'POST'])
@@ -30,7 +35,7 @@ def model():
 
 
 def get_model():
-    return flask.send_from_directory('db', 'model.mesh')
+    return flask.send_from_directory('db', 'complex.mesh')
 
 
 def post_model():
@@ -60,7 +65,13 @@ def post_model():
 
 @application.route("/model/meta", methods=['GET'])
 def get_meta():
-    with open(pjoin(db_dir, "meta.json")) as f:
+    with open(pjoin(db_dir, "meta-complex.json")) as f:
+        return Response(f.read(), mimetype='application/json')
+
+
+@application.route("/model/furniture", methods=['GET'])
+def get_furniture():
+    with open(pjoin(db_dir, "furniture.json")) as f:
         return Response(f.read(), mimetype='application/json')
 
 
@@ -91,6 +102,9 @@ def notifications(ws):
     global socket
     print("Got websocket connection")
     socket = ws
+
+    socket.send('update')
+
     while not ws.closed:
         message = ws.receive()
         if message == None:

@@ -45,6 +45,7 @@ public class OgreRenderer implements GLSurfaceView.Renderer
 	    Native.InitOgre(holder.getSurface(), nativeGvrContext, assetMgr);
 
             surfaceCreated = true;
+            http.connectWebsocket();
             return;
         }
         Log.e("OgreClient", "Surface change not supported");
