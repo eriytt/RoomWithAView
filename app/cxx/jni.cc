@@ -73,14 +73,14 @@ JNI_METHOD(void, DownloadFinished)(JNIEnv *env, jclass clazz, jstring uri, jbyte
   env->ReleaseStringUTFChars(uri, uriStr);
 }
 
-JNI_METHOD(void, HandleKeyDown)(JNIEnv *env, jclass clazz, jint key)
+JNI_METHOD(jboolean, HandleKeyDown)(JNIEnv *env, jclass clazz, jint key)
 {
-  app->handleKeyDown(static_cast<int>(key));
+  return app->handleKeyDown(static_cast<int>(key));
 }
 
-JNI_METHOD(void, HandleKeyUp)(JNIEnv *env, jclass clazz, jint key)
+JNI_METHOD(jboolean, HandleKeyUp)(JNIEnv *env, jclass clazz, jint key)
 {
-  app->handleKeyUp(static_cast<int>(key));
+  return app->handleKeyUp(static_cast<int>(key));
 }
 
 } // extern "C"

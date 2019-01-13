@@ -123,4 +123,21 @@ public class RWAVActivity extends Activity {
                                    | View.SYSTEM_UI_FLAG_FULLSCREEN
                                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (Native.HandleKeyDown(keyCode))
+            return true;
+        else
+            return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (Native.HandleKeyUp(keyCode))
+            return true;
+        else
+            return super.onKeyUp(keyCode, event);
+
+    }
 }

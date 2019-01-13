@@ -1,10 +1,12 @@
+#include "testapp.hh"
+
 #include <unistd.h>
 #include <ois/OIS.h>
 
-#include "testapp.hh"
 
 #include <vector>
 
+#include "keycodes.h"
 #include "Downloader.hh"
 #include "Logging.hh"
 
@@ -15,28 +17,27 @@ public:
   EventHandler(OgreCardboardTestApp *app) : app(app) {}
   bool keyPressed( const OIS::KeyEvent &arg ) {
     if (arg.key == OIS::KC_W)
-      app->handleKeyDown(3);
+      app->handleKeyDown(AKEYCODE_W);
     if (arg.key == OIS::KC_S)
-      app->handleKeyDown(4);
+      app->handleKeyDown(AKEYCODE_S);
     if (arg.key == OIS::KC_A)
-      app->handleKeyDown(1);
+      app->handleKeyDown(AKEYCODE_A);
     if (arg.key == OIS::KC_D)
-      app->handleKeyDown(2);
+      app->handleKeyDown(AKEYCODE_D);
     if (arg.key == OIS::KC_R)
-      app->handleKeyDown(5);
-
+      app->handleKeyDown(AKEYCODE_R);
 
     return true;
   }
   bool keyReleased( const OIS::KeyEvent &arg ) {
     if (arg.key == OIS::KC_W)
-      app->handleKeyUp(3);
+      app->handleKeyUp(AKEYCODE_W);
     if (arg.key == OIS::KC_S)
-      app->handleKeyUp(4);
+      app->handleKeyUp(AKEYCODE_S);
     if (arg.key == OIS::KC_A)
-      app->handleKeyUp(1);
+      app->handleKeyUp(AKEYCODE_A);
     if (arg.key == OIS::KC_D)
-      app->handleKeyUp(2);
+      app->handleKeyUp(AKEYCODE_D);
     return true;
   }
 };

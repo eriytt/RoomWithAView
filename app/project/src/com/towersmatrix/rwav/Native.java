@@ -11,5 +11,7 @@ public class Native
     public native static void UpdateMeta(byte[] data);
     public native static boolean HasQueuedDownloads();
     public native static String GetNextDownload();
-    public native static void DownloadFinished(String uri, byte[] data);;
+    public native static void DownloadFinished(String uri, byte[] data);
+    public native static boolean HandleKeyDown(int keycode);
+    public native static boolean HandleKeyUp(int keycode);
 }

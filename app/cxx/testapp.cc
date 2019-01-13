@@ -1,17 +1,23 @@
 #include "testapp.hh"
 
+#if defined(ANDROID)
+#  include <android/keycodes.h>
+#else
+#  include "keycodes.h"
+#endif
+
 #include "Logging.hh"
 #include "OgreMemoryArchive.hh"
 #include "Downloader.hh"
 
 #if defined(ANDROID)
 OgreCardboardTestApp::OgreCardboardTestApp(JNIEnv *env, jobject androidSurface, gvr_context *gvr, AAssetManager* amgr)
-  : OgreCardboardApp(env, androidSurface, gvr, amgr)
+  : OgreCardboardApp(env, androidSurface, gvr, amgr), timer(0), lastFrameTime_us(0)
 {
   downloader = new Downloader(this);
 }
 #else
-OgreCardboardTestApp::OgreCardboardTestApp() : OgreCardboardApp()
+OgreCardboardTestApp::OgreCardboardTestApp() : OgreCardboardApp(), timer(0), lastFrameTime_us(0)
 {
   downloader = new Downloader(this);
 }
@@ -94,6 +100,10 @@ void OgreCardboardTestApp::initialize()
   // mEnt->setMaterialName("wall-color");
   // mNode = sceneManager->getRootSceneNode()->createChildSceneNode();
   // mNode->attachObject(mEnt);
+
+  timer = new Ogre::Timer();
+  timer->reset();
+  lastFrameTime_us = timer->getMicroseconds();
 }
 
 
@@ -286,7 +296,9 @@ void OgreCardboardTestApp::reloadFurniture() {
                                  v["rotation"]["y"].GetDouble(),
                                  v["rotation"]["z"].GetDouble());
 
-          downloader->download(meshUri, [&, this, mesh, position, rotation](const std::string &uri, char *data, size_t len) {
+          downloader->download(meshUri,
+                               [&, this, mesh, position, rotation, name]
+                               (const std::string &uri, char *data, size_t len) {
               char *buf = new char[len];
               memcpy(buf, data, len);
               auto archive = this->getModelsResourceArchive();
@@ -294,6 +306,7 @@ void OgreCardboardTestApp::reloadFurniture() {
 
               LOGD("Creating entity for %s", mesh.c_str());
               Ogre::Entity *e = this->sceneManager->createEntity(mesh, mesh + ".mesh", "Models");
+              objects.insert(std::make_pair(name, Object(e)));
               Ogre::SceneNode *n = sceneManager->getRootSceneNode()->createChildSceneNode();
               n->attachObject(e);
               n->translate(position);
@@ -303,6 +316,43 @@ void OgreCardboardTestApp::reloadFurniture() {
                                    Ogre::Radian(rotation.z));
               n->setOrientation(Ogre::Quaternion(r));
             });
+
+          auto matNode = v["materials"].GetObject();
+          for (auto sm_itr = matNode.MemberBegin(); sm_itr != matNode.MemberEnd(); ++sm_itr)
+            {
+              std::string submeshName(sm_itr->name.GetString());
+              const rapidjson::Value &mv = matNode[sm_itr->name.GetString()];
+              std::string type(mv["type"].GetString());
+
+              if (type == "SolidColor")
+                {
+                  std::stringstream ss;
+                  unsigned int color;
+                  std::string colorString(mv["color"].GetString());
+
+                  ss << std::hex << colorString;
+                  ss >> color;
+
+                  runOnApplicationThread([&, name, submeshName, color]() {
+                      LOGD("Setting subentity material for %s.%s", name.c_str(), submeshName.c_str());
+                      Ogre::Entity *e = objects[name].entity;
+
+                      Ogre::SubEntity *subEnt = FindSubEntityByName(e, submeshName);
+                      if (subEnt == nullptr)
+                        {
+                          LOGW("Subentity %s not found", name.c_str());
+                          return;
+                        }
+
+                      LOGI("Setting solid color 0x%x material on %s.%s", color, name.c_str(), submeshName.c_str());
+                      subEnt->setMaterialName("wall-color");
+                      subEnt->setCustomParameter(1, Ogre::Vector4(((color & 0xff0000) >> 16)  / 256.0f,
+                                                                  ((color & 0xff00) >> 8)     / 256.0f,
+                                                                  ((color & 0xff))            / 256.0f,
+                                                                  1.0));
+                    });
+                }
+            }
         }
     });
 }
@@ -372,21 +422,26 @@ void OgreCardboardTestApp::reload()
 
 void OgreCardboardTestApp::mainLoop()
 {
+
+  unsigned long frame_time = timer->getMicroseconds();
+  Ogre::Real tdelta = (frame_time - lastFrameTime_us) / Ogre::Real(1000000);
+  lastFrameTime_us = frame_time;
+
   if (forward)
     {
       Ogre::Vector3 d(lcam->getDerivedDirection());
-      forBothCameras([&d](Ogre::Camera *cam){cam->move(d *  0.5);});
+      forBothCameras([&](Ogre::Camera *cam){cam->move(d *  1.5 * tdelta);});
     }
   else if (backward)
     {
       Ogre::Vector3 d(lcam->getDerivedDirection());
-      forBothCameras([&d](Ogre::Camera *cam){cam->move(d * -0.5);});
+      forBothCameras([&](Ogre::Camera *cam){cam->move(d * -1.5 * tdelta);});
     }
 
   if (left)
-    forBothCameras([](Ogre::Camera *cam){cam->yaw(Ogre::Radian( 0.05));});
+    forBothCameras([&](Ogre::Camera *cam){cam->yaw(Ogre::Radian( 1.5 * tdelta));});
   else if (right)
-    forBothCameras([](Ogre::Camera *cam){cam->yaw(Ogre::Radian(-0.05));});
+    forBothCameras([&](Ogre::Camera *cam){cam->yaw(Ogre::Radian(-1.5 * tdelta));});
 
   //mNode->translate(Ogre::Vector3(0.1, 0.1, 0.1));
   //mNode->yaw(Ogre::Radian(0.05));
@@ -406,61 +461,63 @@ void OgreCardboardTestApp::mainLoop()
   renderFrame();
 }
 
-void OgreCardboardTestApp::handleKeyDown(int key)
+bool OgreCardboardTestApp::handleKeyDown(int key)
 {
   switch(key)
     {
-    case 1:
+    case AKEYCODE_A:
       left = true;
       break;
-    case 2:
+    case AKEYCODE_D:
       right = true;
       break;
-    case 3:
+    case AKEYCODE_W:
       forward = true;
       break;
-    case 4:
-      {
-        std::ifstream input("meta.json", std::ios::binary);
-        std::vector<char> buffer((std::istreambuf_iterator<char>(input)),
-                               (std::istreambuf_iterator<char>()));
-        buffer.push_back(0);
-        reloadMeta(buffer.data(), buffer.size());
-      }
+    case AKEYCODE_S:
+      backward = true;
       break;
-    case 5:
+    case AKEYCODE_R:
       {
         reload();
       }
       break;
     default:
-      break;
+      return false;
     }
+  return true;
 }
 
-void OgreCardboardTestApp::handleKeyUp(int key)
+bool OgreCardboardTestApp::handleKeyUp(int key)
 {
   switch(key)
     {
-    case 1:
+    case AKEYCODE_A:
       left = false;
       break;
-    case 2:
+    case AKEYCODE_D:
       right = false;
       break;
-    case 3:
+    case AKEYCODE_W:
       forward = false;
       break;
-    case 4:
+    case AKEYCODE_S:
       backward = false;
       break;
     default:
-      break;
+      return false;
     }
+  return true;
 }
 
 void OgreCardboardTestApp::runOnApplicationThread(Callback f)
 {
-  std::lock_guard<std::mutex> lock(callbackMutex);
+  std::lock_guard<std::recursive_mutex> lock(callbackMutex);
   callbacks.push_back(Promise(f, [](){return true;}));
+}
+
+void OgreCardboardTestApp::runOnApplicationThread(Callback f, std::function<bool()> r)
+{
+  std::lock_guard<std::recursive_mutex> lock(callbackMutex);
+  callbacks.push_back(Promise(f, r));
 }

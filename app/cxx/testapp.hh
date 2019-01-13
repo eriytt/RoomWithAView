@@ -28,7 +28,15 @@ private:
     bool ready() {return validator();}
   };
 
+  struct Object {
+    Ogre::Entity *entity;
+
+    Object(): entity(nullptr) {}
+    Object(Ogre::Entity *e): entity(e) {}
+  };
+
 private:
+  Ogre::Timer * timer;
   Ogre::SceneNode *mNode = nullptr;
   Ogre::Entity *mEnt = nullptr;
   bool forward = false, backward = false, left = false, right = false;
@@ -38,7 +46,11 @@ private:
   Downloader *downloader = nullptr;
 
   std::list<Promise> callbacks;
-  std::mutex callbackMutex;
+  std::recursive_mutex callbackMutex; // needs to
+
+  unsigned long lastFrameTime_us;
+
+  std::map<std::string, Object> objects;
 
 protected:
   void setupCamera();
@@ -56,12 +68,13 @@ public:
   void reloadModel(char *modelData, size_t len);
   void reloadMeta(char *json, size_t length);
   void mainLoop();
-  void handleKeyDown(int key);
-  void handleKeyUp(int key);
+  bool handleKeyDown(int key);
+  bool handleKeyUp(int key);
   Ogre::MemoryArchive *getModelsResourceArchive() {return modelsArchive;}
   Downloader &getDownloader() {if (downloader == nullptr) throw std::runtime_error("Downloader not allocated"); return *downloader;}
 
   void runOnApplicationThread(Callback f);
+  void runOnApplicationThread(Callback f, std::function<bool()> r);
 };
 
 #endif // TESTAPP

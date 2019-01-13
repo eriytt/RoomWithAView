@@ -26,6 +26,11 @@ def get_model_sofa_mesh_xml():
     return flask.send_from_directory('db', 'sofa_seat.000.mesh.xml')
 
 
+@application.route("/model/sofa_seat.000.mesh.mesh", methods=['GET'])
+def get_model_sofa_mesh_mesh():
+    return flask.send_from_directory('db', 'sofa_seat.000.mesh.mesh')
+
+
 @application.route("/model", methods=['GET', 'POST'])
 def model():
     if request.method == 'GET':

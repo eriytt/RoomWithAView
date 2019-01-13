@@ -2,6 +2,7 @@
 #include <functional>
 #include <vector>
 #include <map>
+#include <list>
 
 class OgreCardboardTestApp;
 
@@ -14,13 +15,23 @@ private:
   struct QueueItem
   {
     std::string uri;
-    Callback f;
+    std::list<Callback> callbacks;
 
-    QueueItem(const std::string &uri, Callback f): uri(uri), f(f) {}
+    QueueItem(const std::string &uri, Callback f): uri(uri), callbacks{f} {}
+  };
+
+  struct ReadyItem
+  {
+    QueueItem qItem;
+    char *data;
+    size_t len;
+
+    ReadyItem(QueueItem qi, char *data, size_t len): qItem(qi), data(data), len(len) {}
   };
 
   std::vector<QueueItem> queue;
   std::map<std::string, QueueItem> pending;
+  std::map<std::string, ReadyItem> ready;
   OgreCardboardTestApp *app;
 
 public:
