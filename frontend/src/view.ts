@@ -58,6 +58,10 @@ export class View {
         });
 
         const c_mesh = new THREE.Mesh(c_geom, c_mat);
+        const p = this.state.currentObject.mesh.position;
+        const r = this.state.currentObject.mesh.rotation;
+        c_mesh.position.set(p.x, p.y, p.z);
+        c_mesh.rotation.set(r.x, r.y, r.z);
         cmp.scene.add(c_mesh);
         this.state.shadeObject = { mesh: c_mesh, name: "Shade" };
       }
