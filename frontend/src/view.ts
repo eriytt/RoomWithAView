@@ -173,7 +173,7 @@ export class View {
           const spec = json[name];
           console.log(`Loading furiniture ${name}:`, spec);
 
-          ogreloader.load(`/model/${spec["mesh"]}`).then(meshes => {
+          ogreloader.load(`/model/${spec["mesh"]}.xml`).then(meshes => {
             meshes.forEach(m => {
               console.log("Mesh loaded:", m);
               this.setMaterialForMesh(m, spec["materials"][m.name]);
