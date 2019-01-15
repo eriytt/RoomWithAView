@@ -420,6 +420,55 @@ void OgreCardboardTestApp::reload()
   LOGD("reload exit");
 }
 
+void OgreCardboardTestApp::partialUpdate(const std::string &json)
+{
+  LOGI("Partial update: %s", json.c_str());
+
+  rapidjson::Document doc;
+  doc.Parse(json.c_str());
+
+  if (doc.HasParseError())
+    {
+      LOGE("Parsing JSON partial update failed at offset %d: %s",
+           doc.GetErrorOffset(), GetParseError_En(doc.GetParseError()));
+      return;
+    }
+
+
+  for (auto itr = doc.MemberBegin(); itr != doc.MemberEnd(); ++itr)
+    {
+      std::string name(itr->name.GetString());
+      auto o = objects.find(name);
+      if (o == objects.end())
+        {
+          LOGW("Partial update for missing object: %s", name.c_str());
+          return;
+        }
+
+      LOGD("Partial update for object: %s", name.c_str());
+
+      const rapidjson::Value &v = doc[itr->name.GetString()];
+      for (auto uitr = v.MemberBegin(); uitr != v.MemberEnd(); ++uitr)
+        {
+          std::string updateType(uitr->name.GetString());
+          LOGD("Partial update type: %s", updateType.c_str());
+          if (updateType == "position")
+            {
+              LOGD("Partial position update");
+              const rapidjson::Value &pv = v[uitr->name.GetString()];
+              Ogre::Real x(pv["x"].GetFloat());
+              Ogre::Real y(pv["y"].GetFloat());
+              Ogre::Real z(pv["z"].GetFloat());
+              (*o).second.entity->getParentSceneNode()->setPosition(x, y, z);
+            }
+          else
+            {
+              LOGE("Partial update with unhandled type: %s", updateType.c_str());
+            }
+        }
+    }
+}
+
 void OgreCardboardTestApp::mainLoop()
 {
 

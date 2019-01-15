@@ -24,6 +24,27 @@ export class View {
 
   mycanvas: ThreeCanvasComponent | undefined = undefined;
 
+  moveObject(cmp: ThreeCanvasComponent, coord: THREE.Vector3, push: boolean) {
+    if (this.state.currentObject) {
+      const co = this.state.currentObject;
+      co.mesh.position.set(coord.x, coord.y, coord.z);
+      this.state.shadeObject!.mesh.position.set(coord.x, coord.y, coord.z);
+      cmp.updateCanvas();
+
+      if (!push) return;
+
+      ApiClient.put(`/model/${co.name}/position`, {
+        x: coord.x,
+        y: coord.y,
+        z: coord.z
+      }).catch(e => {
+        console.error(
+          `PUT ${this!.state.currentObject!.name} position failed: ${e}`
+        );
+      });
+    }
+  }
+
   pickObject(cmp: ThreeCanvasComponent, hits: Array<THREE.Intersection>) {
     console.log("Picking objects:", hits);
 
@@ -197,6 +218,9 @@ export class View {
 
     cmp.picker = (cmp, hits) => {
       this.pickObject(cmp, hits);
+    };
+    cmp.mover = (cmp, coord, push: boolean = false) => {
+      this.moveObject(cmp, coord, push);
     };
   }
 

@@ -1,5 +1,6 @@
 from os.path import join as pjoin
 import subprocess
+import json
 
 import flask
 from flask import Flask, request, Response
@@ -29,6 +30,19 @@ def get_model_sofa_mesh_xml():
 @application.route("/model/sofa_seat.000.mesh.mesh", methods=['GET'])
 def get_model_sofa_mesh_mesh():
     return flask.send_from_directory('db', 'sofa_seat.000.mesh.mesh')
+
+
+@application.route("/model/<string:object_name>/position", methods=['PUT'])
+def put_object_position(object_name):
+    if not request.is_json:
+        return {"message": "Not JSON"}, 400
+
+    j = request.get_json()
+
+    global socket
+    if socket:
+        socket.send("update: " + json.dumps({object_name: {"position": j}}))
+    return ""
 
 
 @application.route("/model", methods=['GET', 'POST'])

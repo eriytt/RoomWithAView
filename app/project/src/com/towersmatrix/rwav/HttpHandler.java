@@ -79,6 +79,9 @@ public class HttpHandler
                         response.close();
                     }
                 } catch(IOException e) {}
+            } else if (text.startsWith("update: ")) {
+                String json = text.substring(8);
+                Native.PartialUpdate(json);
             }
         }
 

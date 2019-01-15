@@ -67,6 +67,7 @@ public:
   void reload();
   void reloadModel(char *modelData, size_t len);
   void reloadMeta(char *json, size_t length);
+  void partialUpdate(const std::string &json);
   void mainLoop();
   bool handleKeyDown(int key);
   bool handleKeyUp(int key);

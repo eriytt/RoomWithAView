@@ -43,6 +43,17 @@ JNI_METHOD(void, UpdateMeta)(JNIEnv *env, jclass clazz, jbyteArray array)
 {
 }
 
+JNI_METHOD(void, PartialUpdate)(JNIEnv *env, jclass clazz, jstring json)
+{
+  const char *jsonChars = env->GetStringUTFChars(json, nullptr);
+  const std::string jsonStr(jsonChars);
+  env->ReleaseStringUTFChars(json, jsonChars);
+
+  app->runOnApplicationThread([jsonStr](){
+      app->partialUpdate(jsonStr);
+    });
+}
+
 JNI_METHOD(jboolean, HasQueuedDownloads)(JNIEnv *env, jclass clazz)
 {
   Downloader &downloader = app->getDownloader();

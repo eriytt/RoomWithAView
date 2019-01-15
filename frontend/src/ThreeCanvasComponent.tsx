@@ -26,6 +26,9 @@ export class ThreeCanvasComponent extends React.Component<
   picker:
     | ((cmp: ThreeCanvasComponent, hits: Array<THREE.Intersection>) => void)
     | null = null;
+  mover:
+    | ((cmp: ThreeCanvasComponent, coord: THREE.Vector3, push: boolean) => void)
+    | null = null;
   private light = new THREE.PointLight(0xffffff);
 
   startGL() {
@@ -76,9 +79,8 @@ export class ThreeCanvasComponent extends React.Component<
     });
 
     canvas.addEventListener("mouseup", event => {
-      console.log("mouseup", event);
       //{ target: <canvas>, buttons: 1, clientX: 366, clientY: 479, layerX: 366, layerY: 479 }
-
+      if (event.button != 0 && event.button != 1) return;
       if (this.picker === null) return;
 
       const mouse = new THREE.Vector2();
@@ -88,11 +90,20 @@ export class ThreeCanvasComponent extends React.Component<
       this.raycaster.setFromCamera(mouse, this.camera!);
 
       // calculate objects intersecting the picking ray
-      console.log(this.scene.children);
-      const intersects = this.raycaster.intersectObjects(this.scene.children);
-      this.picker(this, intersects);
+      if (event.button == 0) {
+        const intersects = this.raycaster.intersectObjects(this.scene.children);
+        this.picker(this, intersects);
 
-      this.updateCanvas();
+        this.updateCanvas();
+      } else if (event.button == 1) {
+        if (this.mover === null) return;
+        const hit = new THREE.Vector3();
+        const intersects = this.raycaster.ray.intersectPlane(
+          new THREE.Plane(new THREE.Vector3(0, 0, 1)),
+          hit
+        );
+        this.mover!(this, hit, true);
+      }
     });
 
     canvas.addEventListener("mousemove", event => {
@@ -104,6 +115,19 @@ export class ThreeCanvasComponent extends React.Component<
         this.theta -= dy / (360 * 2 * Math.PI) * 10;
         this.setCamera();
         this.updateCanvas();
+      } else if (event.buttons & 4) {
+        if (this.mover == null) return;
+        const mouse = new THREE.Vector2();
+        mouse.x = event.clientX / this.props.width * 2 - 1;
+        mouse.y = -(event.clientY / this.props.height) * 2 + 1;
+
+        this.raycaster.setFromCamera(mouse, this.camera!);
+        const hit = new THREE.Vector3();
+        const intersects = this.raycaster.ray.intersectPlane(
+          new THREE.Plane(new THREE.Vector3(0, 0, 1)),
+          hit
+        );
+        this.mover(this, hit, false);
       }
       this.mouseX = event.clientX;
       this.mouseY = event.clientY;

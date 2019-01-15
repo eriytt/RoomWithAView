@@ -26,6 +26,8 @@ public:
       app->handleKeyDown(AKEYCODE_D);
     if (arg.key == OIS::KC_R)
       app->handleKeyDown(AKEYCODE_R);
+    if (arg.key == OIS::KC_P)
+      app->partialUpdate("{\"Sofa\":{\"position\":{\"x\":-4.5,\"y\":3.4,\"z\":-1.0}}}");
 
     return true;
   }

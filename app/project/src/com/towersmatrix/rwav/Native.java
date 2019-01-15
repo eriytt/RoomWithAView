@@ -9,6 +9,7 @@ public class Native
     public native static void Render();
     public native static void UpdateModel(byte[] data);
     public native static void UpdateMeta(byte[] data);
+    public native static void PartialUpdate(String json);
     public native static boolean HasQueuedDownloads();
     public native static String GetNextDownload();
     public native static void DownloadFinished(String uri, byte[] data);
