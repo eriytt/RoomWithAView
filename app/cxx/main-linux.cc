@@ -28,6 +28,8 @@ public:
       app->handleKeyDown(AKEYCODE_R);
     if (arg.key == OIS::KC_P)
       app->partialUpdate("{\"Sofa\":{\"position\":{\"x\":-4.5,\"y\":3.4,\"z\":-1.0}}}");
+    if (arg.key == OIS::KC_M)
+      app->partialUpdate("{\"Sofa\":{\"materials\":{\"Sofa\": {\"color\": \"ff0000\"}}}}");
 
     return true;
   }
@@ -55,7 +57,11 @@ int main(int argc, char *argv[])
     {"/textures/DV_157x152_8352574_01_4c_SE_20170802162619.jpg",
      "../../backend/static/textures/DV_157x152_8352574_01_4c_SE_20170802162619.jpg"},
     {"/model/furniture", "../../backend/db/furniture.json"},
-    {"/model/sofa_seat.000.mesh.mesh", "../../backend/db/sofa_seat.000.mesh.mesh"}
+    {"/model/sofa_seat.000.mesh.mesh", "../../backend/db/sofa_seat.000.mesh.mesh"},
+    {"/textures/sofa_base_diffuse_AOmap_alpha.png",
+     "../../backend/static/textures/sofa_base_diffuse_AOmap_alpha.png"},
+    {"/textures/sofa_base_diffuse_AOmap_alpha.png",
+     "../../backend/static/textures/sofa_base_diffuse_AOmap_alpha.png"}
   };
 
   OgreCardboardTestApp *app = new OgreCardboardTestApp();

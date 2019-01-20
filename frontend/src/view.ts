@@ -100,10 +100,20 @@ export class View {
   setObjectColor(color: string) {
     if (this.state.currentObject === undefined) return;
 
-    const m = this.state.currentObject.mesh as THREE.Mesh;
+    const co = this.state.currentObject;
+    const m = co.mesh as THREE.Mesh;
     const mat = m.material as THREE.MeshBasicMaterial;
-    mat.color.setHex(parseInt(color.slice(1), 16));
+    const colorString = color.slice(1);
+    mat.color.setHex(parseInt(colorString, 16));
     this.mycanvas!.updateCanvas();
+
+    ApiClient.put(`/model/${co.name}/material`, { color: colorString }).catch(
+      e => {
+        console.error(
+          `PUT ${this!.state.currentObject!.name} position failed: ${e}`
+        );
+      }
+    );
   }
 
   setObjectTexture(img: string) {
@@ -154,6 +164,11 @@ export class View {
 
       const mat = new THREE.MeshBasicMaterial({
         map: texture
+      });
+      mesh.material = mat;
+    } else if (materialType == "TextureColor") {
+      const mat = new THREE.MeshBasicMaterial({
+        color: parseInt(material["color"], 16)
       });
       mesh.material = mat;
     }

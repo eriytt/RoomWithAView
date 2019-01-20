@@ -1,0 +1,5 @@
+fragment_program fTextureColor glsles
+{
+    source fTextureColor.glsles
+    syntax glsles
+}

@@ -126,7 +126,9 @@ static Ogre::SubEntity *FindSubEntityByName(const Ogre::Entity *ent, const std::
 }
 
 static std::string GenTextureMaterialScript(const std::string &materialName,
-                                            const std::string &textureName)
+                                            const std::string &textureName,
+                                            const std::string &fProgramName,
+                                            const std::vector<std::string> &params)
 {
   std::stringstream ss;
 
@@ -147,10 +149,14 @@ static std::string GenTextureMaterialScript(const std::string &materialName,
      << "            {\n"
      << "                param_named_auto uWorldViewProj WORLDVIEWPROJ_MATRIX\n"
      << "            }\n"
-     << "            fragment_program_ref fTexture\n"
+     << "            fragment_program_ref " << fProgramName << "\n"
      << "            {\n"
-     << "                param_named tex int 0\n"
-     << "            }\n"
+     << "                param_named tex int 0\n";
+
+  for (size_t i = 0; i < params.size(); ++i)
+    ss << "param_named_auto " << params[i] << " custom " << (i + 1) << "\n";
+
+  ss << "            }\n"
      << "        }\n"
      << "    }\n"
      << "}\n";
@@ -159,9 +165,11 @@ static std::string GenTextureMaterialScript(const std::string &materialName,
 }
 
 static void MakeTextureMaterial(const std::string &materialName,
-                                const std::string &textureName)
+                                const std::string &textureName,
+                                const std::string &programName,
+                                const std::vector<std::string> &params)
 {
-  std::string ShaderMaterialScript(GenTextureMaterialScript(materialName, textureName));
+  std::string ShaderMaterialScript(GenTextureMaterialScript(materialName, textureName, programName, params));
   auto scriptStream = OGRE_NEW Ogre::MemoryDataStream("materialStream",
                                                       // TODO: this is not safe
                                                       (void*)(ShaderMaterialScript.c_str()),
@@ -244,7 +252,7 @@ void OgreCardboardTestApp::reloadMeta(char *json, size_t length)
                   LOGI("Updating resource %s", textureName.c_str());
                   arch->setResource(std::string("/dynmaterials/") + textureName, data, len);
                   LOGI("Creating material %s", matName.c_str());
-                  MakeTextureMaterial(matName, textureName);
+                  MakeTextureMaterial(matName, textureName, "fTexture", std::vector<std::string>());
                   LOGI("Setting material name %s for subentity", matName.c_str());
                   // TODO: Dangerous, how do we now the subentity is still alive,
                   //       should probably look it up again...
@@ -351,6 +359,64 @@ void OgreCardboardTestApp::reloadFurniture() {
                                                                   ((color & 0xff))            / 256.0f,
                                                                   1.0));
                     });
+                }
+              else if (type == "TextureColor")
+                {
+                  std::stringstream ss;
+                  unsigned int color;
+                  std::string colorString(mv["color"].GetString());
+
+                  ss << std::hex << colorString;
+                  ss >> color;
+
+                  std::string textureURI(mv["uri"].GetString());
+                  LOGI("Material type 'Texture' with uri: %s", textureURI.c_str());
+                  if (dynmaterialsArchive->find(textureURI)->empty())
+                    {
+                      LOGI("GETing texture %s", textureURI.c_str());
+                      downloader->download(textureURI, [&, textureURI, name, submeshName, color](const std::string &uri, char *data, size_t len) {
+                          Ogre::Entity *e = objects[name].entity;
+
+                          Ogre::SubEntity *subEnt = FindSubEntityByName(e, submeshName);
+                          if (subEnt == nullptr)
+                            {
+                              LOGW("Subentity %s not found", name.c_str());
+                              return;
+                            }
+
+                          Ogre::MemoryArchive *arch = dynmaterialsArchive;
+                          const std::string textureName(textureURI.substr(textureURI.rfind('/') + 1, std::string::npos));
+                          const std::string matName(textureName);
+                          LOGI("Updating resource %s", textureName.c_str());
+                          arch->setResource(std::string("/dynmaterials/") + textureName, data, len);
+                          LOGI("Creating material %s", matName.c_str());
+                          MakeTextureMaterial(matName, textureName, "fTextureColor", std::vector<std::string>{"pColor"});
+                          LOGI("Setting material name %s for subentity", matName.c_str());
+                          subEnt->setMaterialName(matName);
+                          subEnt->setCustomParameter(1, Ogre::Vector4(((color & 0xff0000) >> 16)  / 256.0f,
+                                                                      ((color & 0xff00) >> 8)     / 256.0f,
+                                                                      ((color & 0xff))            / 256.0f,
+                                                                      1.0));
+
+                        });
+                    }
+                  else {
+                    Ogre::Entity *e = objects[name].entity;
+
+                    Ogre::SubEntity *subEnt = FindSubEntityByName(e, submeshName);
+                      if (subEnt == nullptr)
+                        {
+                          LOGW("Subentity %s not found", name.c_str());
+                          return;
+                        }
+
+                    subEnt->setMaterialName(textureURI);
+                    subEnt->setCustomParameter(1, Ogre::Vector4(((color & 0xff0000) >> 16)  / 256.0f,
+                                                                ((color & 0xff00) >> 8)     / 256.0f,
+                                                                ((color & 0xff))            / 256.0f,
+                                                                1.0));
+
+                  }
                 }
             }
         }
@@ -460,6 +526,25 @@ void OgreCardboardTestApp::partialUpdate(const std::string &json)
               Ogre::Real y(pv["y"].GetFloat());
               Ogre::Real z(pv["z"].GetFloat());
               (*o).second.entity->getParentSceneNode()->setPosition(x, y, z);
+            }
+          if (updateType == "materials")
+            {
+              const rapidjson::Value &mv = v[uitr->name.GetString()];
+              for (auto seitr =  mv.MemberBegin(); seitr != mv.MemberEnd(); ++seitr)
+                {
+                  std::stringstream ss;
+                  unsigned int color;
+                  std::string colorString(mv[seitr->name.GetString()]["color"].GetString());
+
+                  ss << std::hex << colorString;
+                  ss >> color;
+
+                  Ogre::SubEntity *subEnt = FindSubEntityByName((*o).second.entity, seitr->name.GetString());
+                  subEnt->setCustomParameter(1, Ogre::Vector4(((color & 0xff0000) >> 16)  / 256.0f,
+                                                              ((color & 0xff00) >> 8)     / 256.0f,
+                                                              ((color & 0xff))            / 256.0f,
+                                                              1.0));
+                }
             }
           else
             {

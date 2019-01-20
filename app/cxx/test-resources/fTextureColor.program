@@ -1,0 +1,5 @@
+fragment_program fTextureColor glsl
+{
+    source fTextureColor.glsl
+    syntax glsl
+}

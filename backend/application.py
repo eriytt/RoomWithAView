@@ -45,6 +45,20 @@ def put_object_position(object_name):
     return ""
 
 
+@application.route("/model/<string:object_name>/material", methods=['PUT'])
+def put_object_material(object_name):
+    if not request.is_json:
+        return {"message": "Not JSON"}, 400
+
+    j = request.get_json()
+
+    global socket
+    if socket:
+        socket.send(
+            "update: " + json.dumps({object_name: {"materials": {object_name: j}}}))
+    return ""
+
+
 @application.route("/model", methods=['GET', 'POST'])
 def model():
     if request.method == 'GET':
