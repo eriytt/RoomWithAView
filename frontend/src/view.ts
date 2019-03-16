@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { ThreeCanvasComponent } from "./ThreeCanvasComponent";
 import { ColorMenuComponent } from "./ColorMenu";
 //import { OgreMaxLoader } from "./OgreMaxLoader";
-import { OgreLoader } from "./OgreLoader";
+import { OgreLoader, OgreMaterialLoader } from "./OgreLoader";
 import { ApiClient } from "./api";
 
 export type MeshObject = {
@@ -136,7 +136,7 @@ export class View {
     this.mycanvas!.updateCanvas();
   }
 
-  setMaterialForMesh(mesh: THREE.Mesh, material: any) {
+  async setMaterialForMesh(mesh: THREE.Mesh, material: any) {
     const materialType = material["type"];
     if (materialType == "SolidColor") {
       const mat = new THREE.MeshBasicMaterial({
@@ -171,6 +171,17 @@ export class View {
         color: parseInt(material["color"], 16)
       });
       mesh.material = mat;
+    } else if (materialType == "Ogre") {
+      const materialName = material.name;
+      const loader = new OgreMaterialLoader(path => "/model/furniture/" + path);
+      const mat = loader.load("/model/furniture/" + materialName);
+      for (const pName in material.parameterValues) {
+        const pValue = material.parameterValues[pName];
+        ((await mat) as THREE.RawShaderMaterial).uniforms[pName] = {
+          value: new THREE.Vector4(pValue.x, pValue.y, pValue.z, pValue.w)
+        };
+      }
+      mesh.material = await mat;
     }
   }
 

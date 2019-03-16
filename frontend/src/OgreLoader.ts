@@ -481,3 +481,351 @@ export class OgreLoader extends THREE.Loader implements THREE.AnyLoader {
 
   //load(url: string, onLoad: any, onProgress: any, onError: any) {}
 }
+
+class Program {
+  name: string = "";
+  source: string = "";
+  code: string = "";
+}
+
+class MaterialData {
+  name: string = "";
+  textures: Array<string> = [];
+  vertexProgram: string = "";
+  fragmentProgram: string = "";
+  namedParams: Array<Array<string>> = [];
+  namedAutoParams: Array<Array<string>> = [];
+  vertexPrograms: Array<Program> = [];
+  fragmentPrograms: Array<Program> = [];
+}
+
+export class OgreMaterialLoader extends THREE.Loader
+  implements THREE.AnyLoader {
+  manager: THREE.LoadingManager;
+  internalManager: THREE.LoadingManager;
+  pathResolver: (path: string) => string;
+
+  constructor(
+    pathResolver?: (path: string) => string,
+    manager?: THREE.LoadingManager
+  ) {
+    super();
+    this.pathResolver = pathResolver ? pathResolver : path => path;
+    this.manager = manager !== undefined ? manager : new THREE.LoadingManager();
+    this.internalManager = new THREE.LoadingManager();
+  }
+
+  public load(url: string): Promise<THREE.Material> {
+    return new Promise((resolve, reject) => {
+      console.log("Loading material", url);
+      const loader = new THREE.FileLoader(this.manager);
+      loader.load(
+        url,
+        (response: string) => {
+          const materialData = new MaterialData();
+          resolve(this.parseOgreMaterial(response, materialData));
+        },
+        (event: ProgressEvent) => {
+          console.log("Material loading progress:", event);
+        },
+        (event: ErrorEvent) => {
+          reject(event);
+        }
+      );
+    });
+  }
+
+  private loadShaderCode(source: string): Promise<string> {
+    const loader = new THREE.FileLoader();
+    return new Promise((resolve, reject) => {
+      loader.load(
+        this.pathResolver(source),
+        data => {
+          resolve(data);
+        },
+        xhr => {},
+        err => reject(err)
+      );
+    });
+  }
+
+  private uniformIsSampler(
+    name: string,
+    fProg: Program,
+    vProg: Program
+  ): boolean {
+    const search = (name: string, code: string): boolean => {
+      // TODO: filter comments
+      const tokens = code.split(/\s/);
+      for (const [i, t] of tokens.entries()) {
+        if (t.startsWith(name)) {
+          if (
+            t.length == name.length + 1 ||
+            (t.charCodeAt(name.length) >= 48 && t.charCodeAt(name.length) < 90)
+          ) {
+            return (
+              tokens[(i as number) - 2] == "uniform" &&
+              tokens[(i as number) - 1].startsWith("sampler")
+            );
+          }
+        }
+      }
+      return false;
+    };
+
+    return search(name, vProg.code) || search(name, fProg.code);
+  }
+
+  private async parseOgreMaterial(
+    materialScript: string,
+    materialData: MaterialData
+  ) {
+    const arr = materialScript.split("\n");
+
+    this.parseData(arr, materialData);
+    console.log("Material data:", materialData);
+
+    const vProg = materialData.vertexPrograms.filter(
+      p => p.name == materialData.vertexProgram
+    )[0];
+
+    const fProg = materialData.fragmentPrograms.filter(
+      p => p.name == materialData.fragmentProgram
+    )[0];
+
+    console.log("Loading textures");
+    const texLoader = new THREE.TextureLoader();
+    const textures = materialData.textures.map(t =>
+      texLoader.load(this.pathResolver(t))
+    );
+
+    await Promise.all([
+      this.loadShaderCode(vProg.source),
+      this.loadShaderCode(fProg.source)
+    ]).then(code => {
+      vProg.code = code[0];
+      fProg.code = code[1];
+    });
+
+    const uniforms: any = {};
+
+    for (const p of materialData.namedParams) {
+      const name = p[0];
+      const typ = p[1];
+      switch (typ) {
+        case "int":
+          // TODO: error check array length according to type
+          if (this.uniformIsSampler(name, vProg, fProg)) {
+            // TODO: check that the texture is specified
+            const tex = textures[parseInt(p[2], 10)];
+            tex.flipY = false;
+            tex.needsUpdate = true;
+            uniforms[name] = { value: tex };
+          } else uniforms[name] = { value: parseInt(p[2], 10) };
+      }
+    }
+
+    for (const p of materialData.namedAutoParams) {
+      if (p[1] == "custom")
+        uniforms[p[0]] = { value: new THREE.Vector4(1.0, 0, 0, 1.0) };
+    }
+
+    const material = new THREE.RawShaderMaterial({
+      vertexShader: vProg.code,
+      fragmentShader: fProg.code,
+      uniforms: uniforms
+    });
+
+    return material;
+  }
+
+  private parseProgram(arr: Array<string>, index: number, prog: Program) {
+    for (var i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "source":
+          prog.source = line[1];
+          break;
+        case "syntax":
+          if (line[1] != "glsl")
+            throw new Error(`syntax ${line[1]} not supported, only 'glsl'}`);
+          break;
+        case "}":
+          return i;
+      }
+    }
+    throw new Error("Reached end of file while parsing program block");
+  }
+
+  private parseData(arr: Array<string>, materialData: MaterialData) {
+    for (let i = 0, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "material":
+          materialData.name = line[1];
+          i = this.parseMaterial(arr, i++, materialData);
+          break;
+        case "vertex_program": {
+          const prog = new Program();
+          prog.name = line[1];
+          i = this.parseProgram(arr, i++, prog);
+          materialData.vertexPrograms.push(prog);
+          break;
+        }
+        case "fragment_program": {
+          const prog = new Program();
+          prog.name = line[1];
+          i = this.parseProgram(arr, i++, prog);
+          materialData.fragmentPrograms.push(prog);
+          break;
+        }
+      }
+    }
+  }
+
+  private parseMaterial(
+    arr: Array<string>,
+    index: number,
+    materialData: MaterialData
+  ) {
+    for (var i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "technique":
+          i = this.parseTechnique(arr, i, materialData);
+          break;
+        case "}":
+          return i;
+      }
+    }
+    throw new Error("Reached end of file while parsing program block");
+  }
+
+  private parseTechnique(
+    arr: Array<string>,
+    index: number,
+    materialData: MaterialData
+  ) {
+    var params = {};
+
+    for (let i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "pass":
+          i = this.parsePass(arr, i++, materialData);
+          break;
+
+        case "}":
+          return i;
+      }
+    }
+    throw new Error("Reached end of file while parsing technique block");
+  }
+
+  private parsePass(
+    arr: Array<string>,
+    index: number,
+    materialData: MaterialData
+  ): number {
+    const params = {};
+    for (var i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "texture_unit":
+          i = this.parseTextureUnit(arr, i++, materialData);
+          break;
+
+        case "vertex_program_ref":
+          materialData.vertexProgram = line[1];
+          i = this.parseVertexProgramRef(arr, i++, materialData);
+          break;
+
+        case "fragment_program_ref":
+          materialData.fragmentProgram = line[1];
+          i = this.parseFragmentProgramRef(arr, i++, materialData);
+          break;
+
+        case "}":
+          return i;
+      }
+    }
+    throw new Error("Reached end of file while parsing pass block");
+  }
+
+  private parseVertexProgramRef(
+    arr: Array<string>,
+    index: number,
+    materialData: MaterialData
+  ): number {
+    for (var i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "}":
+          return i;
+      }
+    }
+    throw new Error(
+      "Reached end of file while parsing vertex_program_ref block"
+    );
+  }
+
+  private parseFragmentProgramRef(
+    arr: Array<string>,
+    index: number,
+    materialData: MaterialData
+  ): number {
+    for (var i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "param_named":
+          materialData.namedParams.push(line.slice(1));
+          break;
+
+        case "param_named_auto":
+          materialData.namedAutoParams.push(line.slice(1));
+          break;
+
+        case "}":
+          return i;
+      }
+    }
+    throw new Error(
+      "Reached end of file while parsing fragment_program_ref block"
+    );
+  }
+
+  private parseTextureUnit(
+    arr: Array<string>,
+    index: number,
+    materialData: MaterialData
+  ): number {
+    for (var i = index, il = arr.length; i < il; i++) {
+      const line = arr[i].trim().split(/\s/);
+      const key = line[0];
+
+      switch (key) {
+        case "texture":
+          materialData.textures.push(line[1]);
+          break;
+
+        case "}":
+          return i;
+      }
+    }
+    throw new Error("Reached end of file while inside texture_unit block");
+  }
+}

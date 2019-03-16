@@ -108,6 +108,11 @@ def get_furniture():
         return Response(f.read(), mimetype='application/json')
 
 
+@application.route("/model/furniture/<string:object_name>", methods=['GET'])
+def get_furniture_files(object_name):
+    return flask.send_from_directory('db', object_name)
+
+
 @application.route("/model/meta", methods=['POST'])
 def post_meta():
     if not request.is_json:
